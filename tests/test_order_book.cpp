@@ -35,3 +35,32 @@ TEST_CASE("Delete order removes regardless of remaining shares") {
 
     REQUIRE(book.bestBid() == 0);
 }
+
+TEST_CASE("Partial cancel: shares reduced but order stays in the book") {
+    OrderBook book;
+    book.addOrder(1, 'B', 50, 100);
+    book.cancelOrder(1, 30);
+
+    REQUIRE(book.bestBid() == 50);
+    REQUIRE(book.getOrderShares(1) == 70);
+}
+
+TEST_CASE("Partial execute: shares reduced but order stays in the book") {
+    OrderBook book;
+    book.addOrder(1, 'B', 50, 100);
+    book.executeOrder(1, 30);
+
+    REQUIRE(book.bestBid() == 50);
+    REQUIRE(book.getOrderShares(1) == 70);
+}
+
+TEST_CASE("Orders at same price maintain FIFO order") {
+    OrderBook book;
+    book.addOrder(1, 'B', 50, 100);
+    book.addOrder(2, 'B', 50, 100);
+    book.addOrder(3, 'B', 50, 25);
+
+    auto orderIds = book.getOrdersAtPrice('B', 50);
+    std::vector<uint64_t> expected = {1, 2, 3};
+    REQUIRE(std::equal(orderIds.begin(), orderIds.end(), expected.begin()));
+}

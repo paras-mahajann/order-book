@@ -2,6 +2,8 @@
 #include <list>
 #include <map>
 #include <unordered_map>
+#include<vector>
+#include<algorithm>
 
 #include "pool_allocator.hpp"
 
@@ -45,6 +47,26 @@ class OrderBook {
     }
 
    public:
+    std::list<uint64_t> getOrdersAtPrice(char side, uint32_t price) {
+        std::list<uint64_t> result;
+        if (side == 'B') {
+            auto it = bids.find(price);
+            if (it == bids.end()) return result;
+            for (Order* order : it->second) result.push_back(order->orderId);
+        } else {
+            auto it = asks.find(price);
+            if (it == asks.end()) return result;
+            for (Order* order : it->second) result.push_back(order->orderId);
+        }
+        return result;
+    }
+    uint32_t getOrderShares(uint64_t orderId) {
+        auto idxIt = orderIndex.find(orderId);
+        if (idxIt == orderIndex.end()) return 0;
+        Order* order = *idxIt->second.listIt;
+        return order->shares;
+    }
+
     uint32_t bestBid() {
         if (bids.empty()) return 0;
         return bids.begin()->first;
@@ -87,7 +109,7 @@ class OrderBook {
         if (idxIt == orderIndex.end()) return;
 
         OrderLocation& loc = idxIt->second;
-        auto& priceLevel = getOrCreatePriceLevel(loc.side,loc.price);
+        auto& priceLevel = getOrCreatePriceLevel(loc.side, loc.price);
 
         Order* order = *loc.listIt;
         order->shares -= sharesExecuted;
@@ -106,8 +128,8 @@ class OrderBook {
         if (idxIt == orderIndex.end()) return;
 
         OrderLocation& loc = idxIt->second;
-     
-        auto& priceLevel = getOrCreatePriceLevel(loc.side,loc.price);
+
+        auto& priceLevel = getOrCreatePriceLevel(loc.side, loc.price);
 
         Order* order = *loc.listIt;
 
